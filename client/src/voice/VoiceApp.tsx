@@ -1,7 +1,5 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Capacitor } from '@capacitor/core'
-
 import { askAI, type ChatMessage } from '../ai/openai'
 import { useVoiceSession } from './useVoiceSession'
 import { speak, stopSpeaking } from '../utils/tts'
@@ -10,8 +8,6 @@ import { loadMessages, saveMessages } from '../utils/chatStorage'
 import { PHASE_LABELS } from './types'
 import { ChatMessageBubble } from '../components/ChatMessage'
 import { InputBar } from '../components/InputBar'
-import { SettingsPanel } from '../components/SettingsPanel'
-import { checkApiConnectivity, getApiBase, isMisconfiguredNativeBase } from '../config/apiBase'
 import { combineAbortSignals, createTimeoutSignal, isTimeoutAbort } from '../utils/withTimeout'
 
 const SAVE_DEBOUNCE_MS = 300
@@ -22,10 +18,6 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [historyReady, setHistoryReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [setupRequired, setSetupRequired] = useState(false)
-  const [setupMessage, setSetupMessage] = useState('无法连接云端服务，请检查网络或在设置中修改 Proxy 地址')
-  const [apiBaseLabel, setApiBaseLabel] = useState('…')
   const listRef = useRef<HTMLDivElement>(null)
   const messagesRef = useRef(messages)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -41,10 +33,6 @@ export default function App() {
       saveTimerRef.current = null
     }
     void saveMessages(messagesRef.current)
-  }, [])
-
-  useEffect(() => {
-    void getApiBase().then((base) => setApiBaseLabel(base))
   }, [])
 
   useEffect(() => {
@@ -87,37 +75,6 @@ export default function App() {
       window.removeEventListener('pagehide', flushSave)
     }
   }, [historyReady, flushSave])
-
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
-
-    void (async () => {
-      const base = await getApiBase()
-      if (isMisconfiguredNativeBase(base)) {
-        setSetupRequired(true)
-        setSetupMessage(
-          '安装包未预置云端地址（当前为 localhost），请在设置中填入 Worker HTTPS 地址，或联系客服获取新版 APK',
-        )
-        return
-      }
-
-      const result = await checkApiConnectivity(base)
-      if (!result.ok) {
-        setSetupRequired(true)
-        if (result.authFailure) {
-          setSetupMessage(
-            '云端已连通，但安装包 Token 未配对。请联系客服获取新版安装包，或核对 Worker 的 PROXY_AUTH_TOKEN',
-          )
-        } else if (result.openaiFailure) {
-          setSetupMessage(
-            '云端已连通，但 AI 服务 Key 无效。请在 Cloudflare Worker 更新 OPENAI_API_KEY 后重试',
-          )
-        } else {
-          setSetupMessage('无法连接云端服务，请检查网络或在设置中修改 Proxy 地址')
-        }
-      }
-    })()
-  }, [])
 
   const handleVoiceSend = useCallback(async (text: string, signal?: AbortSignal) => {
     setError(null)
@@ -183,16 +140,6 @@ export default function App() {
     stopSpeaking()
   }
 
-  const handleSettingsSaved = (url: string) => {
-    setApiBaseLabel(url)
-    setSetupRequired(false)
-  }
-
-  const handleClearHistory = async () => {
-    setMessages([])
-    await saveMessages([])
-  }
-
   const displayError = error ?? voice.error
 
   return (
@@ -200,32 +147,20 @@ export default function App() {
       <header className="app-header">
         <div className="header-row">
           <div>
-            <h1>Voice AI Assistant</h1>
-            <p>语音对话助手 · {apiBaseLabel.replace(/^https?:\/\//, '').slice(0, 32)}</p>
+            <h1>免费库存语音助手</h1>
+            <p>本机识别 · 不使用 OpenAI 额度</p>
           </div>
           <div className="header-actions">
-            <button type="button" className="settings-button" onClick={() => setSettingsOpen(true)}>
-              设置
-            </button>
             <span className={`phase-pill phase-pill-${voice.phase}`}>{PHASE_LABELS[voice.phase]}</span>
           </div>
         </div>
       </header>
 
-      {setupRequired && (
-        <div className="setup-banner">
-          {setupMessage}
-          <button type="button" className="setup-banner-btn" onClick={() => setSettingsOpen(true)}>
-            去设置
-          </button>
-        </div>
-      )}
-
       <main className="chat-area" ref={listRef}>
         {messages.length === 0 && !voice.isBusy && (
           <div className="empty-state">
-            <p>点 🎤 开始语音（Android 会弹出系统「请说话」界面，属正常）</p>
-            <p className="empty-hint">也可在下方输入文字后点「发送」；有网即用，对话保存在本机</p>
+            <p>点 🎤 说库存命令（Android 弹出系统“请说话”界面属正常）</p>
+            <p className="empty-hint">支持进货、出货、收入、欠款及库存查询；不会消耗你的 AI 额度</p>
           </div>
         )}
 
@@ -236,7 +171,7 @@ export default function App() {
         {voice.phase === 'thinking' && (
           <div className="loading-row">
             <span className="loading-dot" />
-            AI 思考中...
+            正在处理库存指令...
           </div>
         )}
       </main>
@@ -264,13 +199,6 @@ export default function App() {
         onVoiceStop={voice.stop}
         onAutoVoiceToggle={voice.toggleAutoVoiceMode}
         onStopSpeaking={handleStopSpeaking}
-      />
-
-      <SettingsPanel
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        onSaved={handleSettingsSaved}
-        onClearHistory={handleClearHistory}
       />
 
     </div>
