@@ -1,35 +1,28 @@
-const KEY = "inventory_password"
-
-
-export function getPassword(){
-
-  return localStorage.getItem(KEY)
-
-}
-
-
-
-export function setPassword(password:string){
+export function saveLogin(){
 
   localStorage.setItem(
-    KEY,
-    password
+    "inventory_login",
+    "true"
   )
 
 }
 
 
+export function isLogin(){
 
-export function hasPassword(){
-
-  return !!getPassword()
+  return (
+    localStorage.getItem(
+      "inventory_login"
+    ) === "true"
+  )
 
 }
 
 
+export function logout(){
 
-export function checkPassword(password:string){
-
-  return getPassword() === password
+  localStorage.removeItem(
+    "inventory_login"
+  )
 
 }
