@@ -147,7 +147,7 @@ export default function App() {
       <header className="app-header">
         <div className="header-row">
           <div>
-            <h1>免费库存语音助手</h1>
+            <h1>库存系统语音助手</h1>
             <p>本机识别 · 不使用 OpenAI 额度</p>
           </div>
           <div className="header-actions">

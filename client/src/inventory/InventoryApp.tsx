@@ -149,7 +149,7 @@ export default function InventoryApp({ onOpenVoice }: Props) {
       <header className="inventory-pro-header">
         <div className="inventory-title-row">
           <div>
-            <h1>📦 库存宝 免费语音 2.9</h1>
+            <h1>📦 库存系统</h1>
             <p>今天：{new Date().toLocaleDateString('zh-CN')}</p>
           </div>
           <div className="inventory-header-actions">

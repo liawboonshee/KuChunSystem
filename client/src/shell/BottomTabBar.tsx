@@ -15,7 +15,7 @@ const tabs = [
   },
   {
     key: 'inventory' as TabKey,
-    label: '库存宝',
+    label: '库存系统',
     icon: '📦',
   },
 ];
