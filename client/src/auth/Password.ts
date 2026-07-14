@@ -1,7 +1,10 @@
+export const APP_PASSWORD="1234"
+
+
 export function validatePassword(
-  password:string
+password:string
 ){
 
-  return /^\d{4}$/.test(password)
+return password===APP_PASSWORD
 
 }
